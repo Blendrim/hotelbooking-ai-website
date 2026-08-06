@@ -1,0 +1,101 @@
+/*
+ * HotelBooking AI Platform — Marketing Design System tokens (Phase 3–5).
+ *
+ * SCOPING: every token lives under the `.mkt` root class so it can NEVER leak into
+ * the authenticated product dashboard (which owns the indigo `brand` tokens). The
+ * marketing surface opts in by wrapping its tree in `.mkt` (see MarketingLayout).
+ *
+ * THEMING: values are stored as space-separated RGB channels so Tailwind can apply
+ * opacity via `rgb(var(--token) / <alpha-value>)`. Scale vars are *theme-aware*:
+ * e.g. `--mkt-ink-900` is the primary text color in BOTH themes (dark values flip
+ * to light), which lets components use one class (`text-mkt-ink-900`) everywhere.
+ *
+ * Dark mode reuses the product's existing `.dark` class (ThemeProvider), so the
+ * global theme toggle drives the marketing site too.
+ */
+
+.mkt {
+  /* Brand — primary (midnight/blue). Authority, trust, calm. */
+  --mkt-primary-900: 10 26 47; /* #0A1A2F */
+  --mkt-primary-700: 18 41 74; /* #12294A */
+  --mkt-primary-500: 30 78 140; /* #1E4E8C */
+  --mkt-primary-300: 108 155 209; /* #6C9BD1 */
+  --mkt-primary-50: 234 241 250; /* #EAF1FA */
+
+  /* Intelligence accent (teal) — the "AI" color, used sparingly (<=10%). */
+  --mkt-accent-600: 14 140 139; /* #0E8C8B */
+  --mkt-accent-400: 34 184 181; /* #22B8B5 */
+  --mkt-accent-200: 155 227 225; /* #9BE3E1 */
+
+  /* Luxury highlight (champagne) — rare (<=5%), premium moments only. */
+  --mkt-gold-500: 201 167 106; /* #C9A76A */
+  --mkt-gold-200: 237 224 200; /* #EDE0C8 */
+
+  /* Ink — text scale. THEME-AWARE: ink-900 == primary text in both themes. */
+  --mkt-ink-900: 11 18 32; /* #0B1220 */
+  --mkt-ink-700: 42 52 65; /* #2A3441 */
+  --mkt-ink-500: 90 102 117; /* #5A6675 */
+  --mkt-ink-300: 152 162 179; /* #98A2B3 */
+
+  /* Surfaces & structure — THEME-AWARE. */
+  --mkt-bg: 247 249 252; /* #F7F9FC page background */
+  --mkt-surface: 255 255 255; /* #FFFFFF cards */
+  --mkt-elevated: 255 255 255; /* raised surfaces */
+  --mkt-border: 228 232 238; /* #E4E8EE hairline */
+
+  /* Semantic (muted, enterprise — not consumer-candy). Maps to status pills. */
+  --mkt-success: 31 157 107; /* #1F9D6B  Available / approved */
+  --mkt-warning: 201 134 43; /* #C9862B  Coming soon */
+  --mkt-error: 192 64 43; /* #C0402B  Error / blocked */
+  --mkt-info: 42 111 176; /* #2A6FB0  Information */
+
+  /* Focus ring (accent). */
+  --mkt-focus: 34 184 181;
+
+  /* Motion tokens (Phase 4C) — consumed by CSS + JS (via getComputedStyle-free consts). */
+  --mkt-dur-fast: 150ms;
+  --mkt-dur-base: 240ms;
+  --mkt-dur-slow: 400ms;
+  --mkt-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --mkt-ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+
+  background-color: rgb(var(--mkt-bg));
+  color: rgb(var(--mkt-ink-900));
+}
+
+/* Dark theme — reuses the product `.dark` class. Scale vars flip so component
+   classes (text-mkt-ink-900, bg-mkt-surface, border-mkt-border) stay unchanged. */
+.dark .mkt {
+  --mkt-ink-900: 234 240 248; /* #EAF0F8 primary text */
+  --mkt-ink-700: 167 178 194; /* #A7B2C2 secondary */
+  --mkt-ink-500: 152 162 179; /* tertiary */
+  --mkt-ink-300: 90 102 117; /* muted */
+
+  --mkt-bg: 10 18 32; /* #0A1220 */
+  --mkt-surface: 17 27 46; /* #111B2E */
+  --mkt-elevated: 22 35 58; /* #16233A */
+  --mkt-border: 42 55 78; /* #2A374E low-contrast light */
+
+  --mkt-accent-400: 46 208 205; /* #2ED0CD brighten on dark */
+  --mkt-primary-50: 22 35 58; /* primary wash becomes an elevated navy */
+}
+
+/* Skeleton shimmer keyframe (uniquely named to avoid clashing with product CSS). */
+@keyframes mktShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Reduced-motion: neutralize any CSS-driven marketing transitions/animations.
+   (JS/Framer paths are handled separately via useReducedMotion.) */
+@media (prefers-reduced-motion: reduce) {
+  .mkt *,
+  .mkt *::before,
+  .mkt *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

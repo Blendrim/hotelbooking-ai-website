@@ -1,0 +1,18 @@
+/* Marketing-only build stylesheet. Includes Tailwind + the marketing token scope only —
+   none of the product dashboard's global body styles. tokens.css is imported by
+   MarketingLayout and sets the `.mkt` variables. */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}

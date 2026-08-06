@@ -1,0 +1,26 @@
+node_modules/
+dist/
+dist-ssr/
+coverage/
+
+# Local env & secrets (NEVER commit)
+.env
+.env.*
+!.env.production
+.dev.vars
+.dev.vars.*
+
+# Editor / OS
+.vscode/
+.idea/
+*.user
+*.suo
+.DS_Store
+Thumbs.db
+
+# Logs & temp
+logs/
+*.log
+tmp/
+.cache/
+.wrangler/

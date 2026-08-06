@@ -1,0 +1,3 @@
+# Cloudflare Pages SPA fallback. Pages Functions (/api/*) run BEFORE this rule, so the
+# lead endpoint is not swallowed. All other paths serve the SPA shell.
+/*    /index.html    200
