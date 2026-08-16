@@ -25,23 +25,28 @@ npm run dev        # http://localhost:5173
 | `npm run lint` | ESLint |
 | `npm run typecheck` | TypeScript, no emit |
 
-> The lead form posts to `/api/leads`. Under `npm run dev`/`preview` that route has no
-> handler, so submissions show an honest error. To run the function locally, use
-> `npx wrangler pages dev dist` after `npm run build`.
+> The lead form posts to `/api/leads`. Under `npm run dev`/`preview` (Vite only) that route
+> has no handler, so submissions show an honest error. To run the full Worker + assets model
+> locally, use `npm run cf:dev` (`wrangler dev`) after `npm run build`.
 
-## Deployment — Cloudflare Pages
+## Deployment — Cloudflare Workers + Static Assets
 
-Connect this repository to Cloudflare Pages with:
+Deployed as a single Cloudflare **Worker with Static Assets** (`wrangler deploy`), configured
+in `wrangler.jsonc`:
 
-| Setting | Value |
+- `worker/index.ts` serves `POST /api/leads`.
+- Everything else is served from `./dist` as static assets, with native SPA fallback
+  (`not_found_handling: "single-page-application"`) so direct navigation and refresh on any
+  client route render via React Router. **No `_redirects` file is used** (it caused an
+  infinite-loop error under Workers Static Assets).
+
+| Cloudflare setting | Value |
 |---|---|
-| Framework preset | Vite |
 | Build command | `npm run build` |
+| Deploy command | `npx wrangler deploy` |
 | Output directory | `dist` |
-| Functions | auto-discovered from `functions/` |
 
-SPA routing is handled by `public/_redirects` (`/* /index.html 200`). Pages Functions run
-before the fallback, so `POST /api/leads` is served by `functions/api/leads.ts`.
+Validate the config locally with `npm run cf:check` (`wrangler deploy --dry-run`).
 
 ### Environment variables
 

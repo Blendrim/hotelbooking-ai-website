@@ -1,0 +1,17 @@
+{
+  // Cloudflare Worker + Static Assets deployment for the HotelBooking AI marketing site.
+  // One deployment model: the Worker serves POST /api/leads; everything else is served
+  // from ./dist as static assets, with native SPA fallback to index.html (no _redirects).
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "hotelbooking-ai-website",
+  "main": "worker/index.ts",
+  "compatibility_date": "2025-11-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // Direct navigation / refresh on client routes (/platform, /pricing, /legal/privacy…)
+    // returns index.html so React Router can render — the correct replacement for the
+    // invalid `/* /index.html 200` _redirects rule.
+    "not_found_handling": "single-page-application"
+  }
+}

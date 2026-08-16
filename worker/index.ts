@@ -1,28 +1,22 @@
 /**
- * Public lead endpoint — Cloudflare Pages Function (Step 2B §2). Serves POST /api/leads
- * on the SAME ORIGIN as the marketing site, so no CORS and no browser-exposed secrets.
+ * Cloudflare Worker entry (Workers + Static Assets model).
  *
- * This replaces the local .NET dependency for the PUBLIC marketing deployment. (The .NET
- * /api/leads stays for local dev of the coupled app.) The .NET backend is NOT deployed
- * just for lead collection.
+ * Routing:
+ *   POST /api/leads   → handled here (public lead capture)
+ *   everything else   → env.ASSETS.fetch() → static files, with SPA fallback to
+ *                       index.html for client-side routes (not_found_handling:
+ *                       "single-page-application" in wrangler.jsonc).
  *
- * Delivery: if RESEND_API_KEY + LEADS_TO_EMAIL are configured (server-side secrets, never
- * VITE_*), the lead is emailed and `delivered: true`. If not configured (dev/preview),
- * the lead is logged (PII-safe) and returned with `delivered: false` — an honest response,
- * never a fake "sent". Configure the secrets before real launch so leads are delivered.
- *
- * This file is NOT part of the Vite bundle or the app tsconfig — Cloudflare builds it.
+ * This replaces the previous Cloudflare Pages Functions + _redirects setup — one
+ * deployment model only. No SaaS code, no auth, no secrets in the bundle.
  */
 
 interface Env {
+  ASSETS: { fetch: (request: Request) => Promise<Response> };
+  // Server-side secrets (Cloudflare env bindings — never VITE_*).
   RESEND_API_KEY?: string;
   LEADS_TO_EMAIL?: string;
   LEADS_FROM_EMAIL?: string;
-}
-
-interface PagesContext {
-  request: Request;
-  env: Env;
 }
 
 type LeadType = 'demo' | 'contact-sales' | 'partner' | 'waitlist';
@@ -39,12 +33,13 @@ function json(body: unknown, status: number): Response {
 function str(v: unknown, max: number): string | undefined {
   if (typeof v !== 'string') return undefined;
   const t = v.trim();
-  if (!t) return undefined;
-  return t.slice(0, max);
+  return t ? t.slice(0, max) : undefined;
 }
 
-export const onRequestPost = async (context: PagesContext): Promise<Response> => {
-  const { request, env } = context;
+async function handleLead(request: Request, env: Env): Promise<Response> {
+  if (request.method !== 'POST') {
+    return json({ error: 'Method not allowed.' }, 405);
+  }
 
   let body: Record<string, unknown>;
   try {
@@ -83,7 +78,6 @@ export const onRequestPost = async (context: PagesContext): Promise<Response> =>
 
   const referenceId = 'LEAD-' + crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase();
 
-  // Route by type to the right mailbox (documented in the form-routing matrix).
   const routeTo: Record<LeadType, string> = {
     demo: 'sales',
     'contact-sales': 'sales',
@@ -91,6 +85,7 @@ export const onRequestPost = async (context: PagesContext): Promise<Response> =>
     waitlist: 'sales',
   };
 
+  // Deliver via Resend only if configured; otherwise honest `delivered: false`.
   let delivered = false;
   if (env.RESEND_API_KEY && env.LEADS_TO_EMAIL) {
     try {
@@ -117,8 +112,19 @@ export const onRequestPost = async (context: PagesContext): Promise<Response> =>
     }
   }
 
-  // PII-safe log: type / route / source / ref only — never name, email or message.
+  // PII-safe: log type / route / source / ref only — never name, email or message.
   console.log(`[lead] ${referenceId} type=${type} route=${routeTo[type]} source=${lead.source ?? '(none)'} delivered=${delivered}`);
 
   return json({ referenceId, delivered }, 202);
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    if (url.pathname === '/api/leads') {
+      return handleLead(request, env);
+    }
+    // Static assets + SPA fallback (index.html) for all client-side routes.
+    return env.ASSETS.fetch(request);
+  },
 };
