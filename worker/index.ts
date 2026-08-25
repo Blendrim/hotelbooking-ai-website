@@ -11,6 +11,8 @@
  * deployment model only. No SaaS code, no auth, no secrets in the bundle.
  */
 
+import { buildLeadEmail } from './leadEmail';
+
 interface Env {
   ASSETS: { fetch: (request: Request) => Promise<Response> };
   // Server-side secrets (Cloudflare env bindings — never VITE_*).
@@ -100,6 +102,21 @@ async function handleLead(request: Request, env: Env): Promise<Response> {
     // `send.` sending subdomain so it does not clash with the apex domain's Cloudflare
     // Email Routing (which handles receiving). Override with LEADS_FROM_EMAIL.
     const fromAddress = env.LEADS_FROM_EMAIL ?? 'HotelBooking AI <leads@send.hotel-booking-ai.com>';
+    // Polished, HTML-escaped transactional email (HTML + plain-text fallback).
+    const emailContent = buildLeadEmail({
+      referenceId,
+      type,
+      fullName,
+      email,
+      company: lead.company,
+      hotelName: lead.hotelName,
+      role: lead.role,
+      propertySize: lead.propertySize,
+      partnerType: lead.partnerType,
+      message: lead.message,
+      source: lead.source,
+      receivedAt: new Date(),
+    });
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -111,12 +128,9 @@ async function handleLead(request: Request, env: Env): Promise<Response> {
           from: fromAddress,
           to: env.LEADS_TO_EMAIL,
           reply_to: email, // replying from the inbox goes straight to the prospect
-          subject: `New ${type} lead (${routeTo[type]}) — ${referenceId}`,
-          text:
-            `Reference: ${referenceId}\nType: ${type}\nName: ${fullName}\nEmail: ${email}\n` +
-            `Company: ${lead.company ?? '-'}\nHotel: ${lead.hotelName ?? '-'}\nRole: ${lead.role ?? '-'}\n` +
-            `Size: ${lead.propertySize ?? '-'}\nPartner type: ${lead.partnerType ?? '-'}\n` +
-            `Source: ${lead.source ?? '-'}\nMessage: ${lead.message ?? '-'}\n`,
+          subject: emailContent.subject,
+          html: emailContent.html,
+          text: emailContent.text,
         }),
       });
       providerStatus = res.status;
