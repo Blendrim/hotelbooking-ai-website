@@ -85,9 +85,21 @@ async function handleLead(request: Request, env: Env): Promise<Response> {
     waitlist: 'sales',
   };
 
-  // Deliver via Resend only if configured; otherwise honest `delivered: false`.
+  // The lead is ACCEPTED the moment it validates (a referenceId is assigned). Delivery
+  // via Resend is a separate step whose outcome is tracked internally for diagnosis.
+  //   not_configured  — RESEND_API_KEY / LEADS_TO_EMAIL not set (nothing sent)
+  //   provider_accepted — Resend accepted the email (delivered: true)
+  //   provider_rejected — Resend returned an error (e.g. 403 = sender domain not verified)
+  //   error           — network/exception reaching Resend
   let delivered = false;
+  let providerStatus: number | null = null;
+  let outcome: 'not_configured' | 'provider_accepted' | 'provider_rejected' | 'error' = 'not_configured';
+
   if (env.RESEND_API_KEY && env.LEADS_TO_EMAIL) {
+    // Sender must be an address on a domain VERIFIED in Resend. The default targets the
+    // `send.` sending subdomain so it does not clash with the apex domain's Cloudflare
+    // Email Routing (which handles receiving). Override with LEADS_FROM_EMAIL.
+    const fromAddress = env.LEADS_FROM_EMAIL ?? 'HotelBooking AI <leads@send.hotel-booking-ai.com>';
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -96,8 +108,9 @@ async function handleLead(request: Request, env: Env): Promise<Response> {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          from: env.LEADS_FROM_EMAIL ?? 'leads@hotelbooking.ai',
+          from: fromAddress,
           to: env.LEADS_TO_EMAIL,
+          reply_to: email, // replying from the inbox goes straight to the prospect
           subject: `New ${type} lead (${routeTo[type]}) — ${referenceId}`,
           text:
             `Reference: ${referenceId}\nType: ${type}\nName: ${fullName}\nEmail: ${email}\n` +
@@ -106,14 +119,30 @@ async function handleLead(request: Request, env: Env): Promise<Response> {
             `Source: ${lead.source ?? '-'}\nMessage: ${lead.message ?? '-'}\n`,
         }),
       });
+      providerStatus = res.status;
       delivered = res.ok;
+      outcome = res.ok ? 'provider_accepted' : 'provider_rejected';
     } catch {
-      delivered = false;
+      outcome = 'error';
     }
   }
 
-  // PII-safe: log type / route / source / ref only — never name, email or message.
-  console.log(`[lead] ${referenceId} type=${type} route=${routeTo[type]} source=${lead.source ?? '(none)'} delivered=${delivered}`);
+  // PII-safe structured log: reference, type, route, timestamp, provider status + outcome.
+  // Never logs the secret, name, email, or message. A providerStatus of 403 typically
+  // means the sender domain is not yet verified in Resend.
+  console.log(
+    JSON.stringify({
+      tag: 'lead',
+      referenceId,
+      type,
+      route: routeTo[type],
+      source: lead.source ?? null,
+      ts: new Date().toISOString(),
+      providerStatus,
+      outcome,
+      delivered,
+    }),
+  );
 
   return json({ referenceId, delivered }, 202);
 }
