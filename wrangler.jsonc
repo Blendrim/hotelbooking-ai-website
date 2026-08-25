@@ -6,6 +6,14 @@
   "name": "hotelbooking-ai-website",
   "main": "worker/index.ts",
   "compatibility_date": "2025-11-01",
+  // Non-secret runtime bindings. Declared here so every `wrangler deploy` guarantees they
+  // reach the Worker at runtime — dashboard-only plaintext vars get wiped/overwritten on
+  // Git deploys, which left env.LEADS_TO_EMAIL undefined and skipped the Resend call.
+  // RESEND_API_KEY is a SECRET and must NEVER live here — set it as a Worker runtime Secret.
+  "vars": {
+    "LEADS_TO_EMAIL": "contact@hotel-booking-ai.com",
+    "LEADS_FROM_EMAIL": "HotelBooking AI <leads@send.hotel-booking-ai.com>"
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

@@ -144,7 +144,10 @@ async function handleLead(request: Request, env: Env): Promise<Response> {
     }),
   );
 
-  return json({ referenceId, delivered }, 202);
+  // `outcome` + `providerStatus` are safe (non-PII, non-secret) and let the endpoint be
+  // self-diagnosed: e.g. delivered:true/outcome:"provider_accepted" once Resend is reached,
+  // or outcome:"not_configured" if a runtime binding is still missing.
+  return json({ referenceId, delivered, outcome, providerStatus }, 202);
 }
 
 export default {
