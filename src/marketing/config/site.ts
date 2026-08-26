@@ -3,25 +3,29 @@
  * company name, public emails, social links, and the form endpoint live. Everything that
  * needs these values imports from here — no scattered domain strings.
  *
- * PLACEHOLDERS: `publicUrl` and the emails are placeholders until the real domain/mailboxes
- * are provided. robots.txt and sitemap.xml carry the same placeholder host (keep them in sync).
+ * The official public domain is hotel-booking-ai.com and the professional mailbox is
+ * contact@hotel-booking-ai.com. robots.txt and sitemap.xml carry the same host — keep in sync.
  */
 export const site = {
   company: 'HotelBooking AI Platform',
 
-  /** Canonical origin (no trailing slash). PLACEHOLDER — replace at launch. */
-  publicUrl: 'https://www.hotelbooking.ai',
+  /** Canonical origin (no trailing slash) — the official public domain. */
+  publicUrl: 'https://hotel-booking-ai.com',
 
   /** Canonical home path (see marketingRouter — "/" redirects here). */
   homePath: '/home',
 
-  /** Public mailboxes. PLACEHOLDER domain — do not expose personal email publicly. */
+  /**
+   * Public mailboxes. Only contact@hotel-booking-ai.com is a live, confirmed mailbox
+   * (Cloudflare Email Routing → Gmail), so all public contact points route to it. Add
+   * dedicated role mailboxes here only once they exist.
+   */
   email: {
-    general: 'contact@hotelbooking.ai',
-    sales: 'sales@hotelbooking.ai',
-    partners: 'partners@hotelbooking.ai',
-    privacy: 'privacy@hotelbooking.ai',
-    support: 'support@hotelbooking.ai',
+    general: 'contact@hotel-booking-ai.com',
+    sales: 'contact@hotel-booking-ai.com',
+    partners: 'contact@hotel-booking-ai.com',
+    privacy: 'contact@hotel-booking-ai.com',
+    support: 'contact@hotel-booking-ai.com',
   },
 
   social: {

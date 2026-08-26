@@ -1,8 +1,7 @@
 # HotelBooking AI Platform — public marketing site.
-# Replace the Sitemap host with the real production domain before launch
-# (keep it in sync with src/marketing/config/site.ts).
+# Official domain: hotel-booking-ai.com (keep in sync with src/marketing/config/site.ts).
 
 User-agent: *
 Allow: /
 
-Sitemap: https://www.hotelbooking.ai/sitemap.xml
+Sitemap: https://hotel-booking-ai.com/sitemap.xml
